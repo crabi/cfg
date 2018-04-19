@@ -1,17 +1,18 @@
 package cfg
 
 import (
-	"os"
-	"log"
 	"flag"
+	"log"
+	"os"
 
 	"github.com/spf13/viper"
 )
 
-const EnvModeVar = "GOENV"
+const envModeVar = "GOENV"
 
 var configPath string
 
+// Load loads the configuration file depending on the Go environment mode
 func Load() {
 	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
 	flag.Parse()
@@ -23,7 +24,7 @@ func Load() {
 		log.Println("error reading default configuration file:", err)
 	}
 
-	configName, ok := os.LookupEnv(EnvModeVar)
+	configName, ok := os.LookupEnv(envModeVar)
 	if !ok || configName == "" {
 		configName = "local"
 	}
