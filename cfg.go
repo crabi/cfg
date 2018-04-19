@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -40,6 +41,7 @@ func Load(serviceName string) {
 
 	viper.SetEnvPrefix(serviceName)
 	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	viper.SetConfigName("default")
 	viper.AddConfigPath(configPath)
