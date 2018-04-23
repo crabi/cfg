@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -30,6 +31,11 @@ func Load(serviceName string) {
 	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
 	flag.StringVar(&configType, "configtype", "yaml", "Configuration format to use in files")
 	flag.Parse()
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file", err)
+	}
 
 	viper.SetConfigType(configType)
 
