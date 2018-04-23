@@ -14,7 +14,10 @@ const (
 	localConfigName = "local"
 )
 
-var configPath string
+var (
+	configPath string
+	configType string
+)
 
 func loadEnvConfig(env string) error {
 	viper.SetConfigName(env)
@@ -25,7 +28,10 @@ func loadEnvConfig(env string) error {
 // Load loads the configuration file depending on the Go environment mode
 func Load(serviceName string) {
 	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
+	flag.StringVar(&configType, "configtype", "yaml", "Configuration format to use in files")
 	flag.Parse()
+
+	viper.SetConfigType(configType)
 
 	viper.SetEnvPrefix(serviceName)
 	viper.AutomaticEnv()
