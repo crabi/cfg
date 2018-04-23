@@ -16,22 +16,10 @@ const (
 
 var configPath string
 
-func loadEnvSpecificConfig() {
-	configName, ok := os.LookupEnv(envModeVar)
-	if !ok || configName == "" {
-		configName = localConfigName
-	}
-
-	viper.SetConfigName(configName)
+func loadEnvConfig(env string) error {
+	viper.SetConfigName(env)
 	viper.AddConfigPath(configPath)
-	if err := viper.MergeInConfig(); err != nil {
-		if configName == localConfigName {
-			log.Println(localConfigName, "file not found. Using only default config")
-			return
-		}
-
-		log.Fatalln("error reading %s configuration file: %s", configName, err)
-	}
+	return viper.MergeInConfig()
 }
 
 // Load loads the configuration file depending on the Go environment mode
@@ -49,5 +37,17 @@ func Load(serviceName string) {
 		log.Println("error reading default configuration file:", err)
 	}
 
-	loadEnvSpecificConfig()
+	envConfig, ok := os.LookupEnv(envModeVar)
+	if !ok || envConfig == "" {
+		envConfig = localConfigName
+	}
+
+	if err := loadEnvConfig(envConfig); err != nil {
+		if envConfig == localConfigName {
+			log.Println(localConfigName, "file not found. Using only default config")
+			return
+		}
+
+		log.Fatalln("error reading %s configuration file: %s", envConfig, err)
+	}
 }
