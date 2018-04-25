@@ -4,34 +4,62 @@ import (
 	"flag"
 	"log"
 	"os"
+	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
-const envModeVar = "GOENV"
+const (
+	envModeVar      = "GOENV"
+	localConfigName = "local"
+)
 
-var configPath string
+var (
+	configPath string
+	configType string
+)
+
+func loadEnvConfig(env string) error {
+	viper.SetConfigName(env)
+	viper.AddConfigPath(configPath)
+	return viper.MergeInConfig()
+}
 
 // Load loads the configuration file depending on the Go environment mode
-func Load() {
+func Load(serviceName string) {
 	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
+	flag.StringVar(&configType, "configtype", "yaml", "Configuration format to use in files")
 	flag.Parse()
 
-	viper.SetConfigType("toml")
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file", err)
+	}
+
+	viper.SetConfigType(configType)
+
+	viper.SetEnvPrefix(serviceName)
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
 	viper.SetConfigName("default")
 	viper.AddConfigPath(configPath)
 	if err := viper.ReadInConfig(); err != nil {
 		log.Println("error reading default configuration file:", err)
 	}
 
-	configName, ok := os.LookupEnv(envModeVar)
-	if !ok || configName == "" {
-		configName = "local"
+	envConfig, ok := os.LookupEnv(envModeVar)
+	if !ok || envConfig == "" {
+		envConfig = localConfigName
 	}
 
-	viper.SetConfigName(configName)
-	viper.AddConfigPath(configPath)
-	if err := viper.MergeInConfig(); err != nil {
-		log.Fatalln("error reading %s configuration file:", configName, err)
+	if err := loadEnvConfig(envConfig); err != nil {
+		if envConfig == localConfigName {
+			log.Println(localConfigName, "file not found. Using only default config")
+			return
+		}
+
+		log.Fatalln("error reading %s configuration file: %s", envConfig, err)
 	}
 }
