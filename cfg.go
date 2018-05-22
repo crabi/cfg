@@ -1,65 +1,35 @@
 package cfg
 
 import (
-	"flag"
-	"log"
-	"os"
-	"strings"
+	"fmt"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 const (
-	envModeVar      = "GOENV"
-	localConfigName = "local"
+	configType        = "yaml"
+	defaultConfigName = "default"
 )
 
-var (
-	configPath string
-	configType string
-)
-
-func loadEnvConfig(env string) error {
-	viper.SetConfigName(env)
-	viper.AddConfigPath(configPath)
-	return viper.MergeInConfig()
-}
-
-// Load loads the configuration file depending on the Go environment mode
-func Load(serviceName string) {
-	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
-	flag.StringVar(&configType, "configtype", "yaml", "Configuration format to use in files")
-	flag.Parse()
-
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file", err)
-	}
-
+// LoadConfig loads a config directory, the default config file and overrides with a given configuration.
+// It returns a generic configuration, which ideally will be parsed into a struct.
+func LoadConfig(configPath, configName string) (map[string]interface{}, error) {
 	viper.SetConfigType(configType)
-
-	viper.SetEnvPrefix(serviceName)
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	viper.SetConfigName("default")
 	viper.AddConfigPath(configPath)
+
+	// Load default config
+	viper.SetConfigName(defaultConfigName)
 	if err := viper.ReadInConfig(); err != nil {
-		log.Println("error reading default configuration file:", err)
+		return nil, fmt.Errorf("error loading \"%s\" configuration", defaultConfigName)
 	}
 
-	envConfig, ok := os.LookupEnv(envModeVar)
-	if !ok || envConfig == "" {
-		envConfig = localConfigName
-	}
-
-	if err := loadEnvConfig(envConfig); err != nil {
-		if envConfig == localConfigName {
-			log.Println(localConfigName, "file not found. Using only default config")
-			return
+	// Override with specific config
+	if configName != "" {
+		viper.SetConfigName(configName)
+		if err := viper.MergeInConfig(); err != nil {
+			return nil, fmt.Errorf("error overriding \"%s\" configuration", configName)
 		}
-
-		log.Fatalln("error reading %s configuration file: %s", envConfig, err)
 	}
+
+	return viper.AllSettings(), nil
 }

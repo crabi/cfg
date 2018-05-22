@@ -1,0 +1,3 @@
+foo_service:
+  foo_string: testfoo
+  foo_bool: true
