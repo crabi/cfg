@@ -1,35 +1,92 @@
 package cfg
 
 import (
+	"errors"
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 )
 
 const (
-	configType        = "yaml"
-	defaultConfigName = "default"
+	envNameKey = "GOENV"
+
+	defaultConfigPath = "./config"
+	defaultFileType   = "yaml"
+
+	defaultConfigEnv = "default"
+	localConfigEnv   = "local"
 )
 
-// LoadConfig loads a config directory, the default config file and overrides with a given configuration.
+// Params is used to load a new environment
+type Params struct {
+	Path     string
+	FileType string
+}
+
+// SetDefaults sets the default values of a Config fields
+func (c *Params) SetDefaults() {
+	if c.Path == "" {
+		c.Path = defaultConfigPath
+	}
+	if c.FileType == "" {
+		c.FileType = defaultFileType
+	}
+}
+
+type configWrapper struct {
+	v      *viper.Viper
+	params *Params
+}
+
+func (c *configWrapper) getEnv() string {
+	envName := os.Getenv(envNameKey)
+	if envName == "" {
+		envName = localConfigEnv
+	}
+	return envName
+}
+
+func (c *configWrapper) loadEnv(envName string) error {
+	c.v.SetConfigType(c.params.FileType)
+	c.v.SetConfigName(envName)
+	c.v.AddConfigPath(c.params.Path)
+	return c.v.ReadInConfig()
+}
+
+func (c *configWrapper) mergeEnv(envName string) error {
+	c.v.SetConfigType(c.params.FileType)
+	c.v.SetConfigName(envName)
+	c.v.AddConfigPath(c.params.Path)
+	return c.v.MergeInConfig()
+}
+
+// Get returns a map[string]interface{} of a given key
+func (c *configWrapper) Get(key string) map[string]interface{} {
+	return c.v.GetStringMap(key)
+}
+
+// Load loads a config directory, the default config file and overrides with a given configuration.
 // It returns a generic configuration, which ideally will be parsed into a struct.
-func LoadConfig(configPath, configName string) (map[string]interface{}, error) {
-	viper.SetConfigType(configType)
-	viper.AddConfigPath(configPath)
-
-	// Load default config
-	viper.SetConfigName(defaultConfigName)
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("error loading \"%s\" configuration", defaultConfigName)
+func Load(params *Params) (*configWrapper, error) {
+	if params == nil {
+		return nil, errors.New("nil params")
 	}
 
-	// Override with specific config
-	if configName != "" {
-		viper.SetConfigName(configName)
-		if err := viper.MergeInConfig(); err != nil {
-			return nil, fmt.Errorf("error overriding \"%s\" configuration", configName)
-		}
+	c := &configWrapper{
+		v:      viper.New(),
+		params: &(*params),
+	}
+	c.params.SetDefaults()
+
+	if err := c.loadEnv(defaultConfigEnv); err != nil {
+		return nil, fmt.Errorf("error reading \"default\" configuration file")
 	}
 
-	return viper.AllSettings(), nil
+	envName := c.getEnv()
+	if err := c.mergeEnv(envName); err != nil {
+		return nil, fmt.Errorf("error merging \"%s\" configuration file", envName)
+	}
+
+	return c, nil
 }

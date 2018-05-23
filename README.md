@@ -12,14 +12,12 @@ command line flags be found in `example/main.go`.
 ## Usage
 Expected default config files:
  - config/default.yaml
-
-Suggested config files:
  - config/local.yaml
+
+Suggested additional config files:
  - config/develop.yaml
  - config/test.yaml
  - config/staging.yaml
  - config/production.yaml
-
-NOTE: Configuration files must be valid `yaml` files.
 
 For an example, see the directory `example/`.
