@@ -12,7 +12,6 @@ const (
 	envNameKey = "GOENV"
 
 	defaultConfigPath = "./config"
-	defaultConfigType = "viper"
 	defaultFileType   = "yaml"
 
 	defaultConfigEnv = "default"
