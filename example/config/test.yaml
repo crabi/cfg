@@ -1,1 +1,3 @@
-name: test
+services:
+  main:
+    app_id: "test"

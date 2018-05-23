@@ -1,8 +1,7 @@
-name: default
 api:
   host: "127.0.0.1"
   port: 8080
 services:
   main:
-    token: "secret"
-    app_id: "secret"
+    token: no-token
+    app_id: default
