@@ -69,13 +69,13 @@ func TestLoad(t *testing.T) {
 	}{
 		"TestHappyPathDefaultEnv": {
 			params: &cfg.Params{
-				Path: "./testConf/conf",
+				Path: "./conf/conf",
 			},
 			expectedError: nil,
 		},
 		"TestHappyPathOverrideEnv": {
 			params: &cfg.Params{
-				Path: "./testConf/conf",
+				Path: "./conf/conf",
 			},
 			envNameValue:  "production",
 			expectedError: nil,
@@ -86,14 +86,14 @@ func TestLoad(t *testing.T) {
 		},
 		"TestBadFileType": {
 			params: &cfg.Params{
-				Path:     "./testConf/conf",
+				Path:     "./conf/conf",
 				FileType: "xml",
 			},
 			expectedError: errors.New("error reading \"default\" configuration file"),
 		},
 		"TestNotFoundEnv": {
 			params: &cfg.Params{
-				Path: "./testConf/conf",
+				Path: "./conf/conf",
 			},
 			envNameValue:  "staging",
 			expectedError: errors.New("error merging \"staging\" configuration file"),
@@ -114,7 +114,7 @@ func TestLoad(t *testing.T) {
 func TestGet(t *testing.T) {
 	os.Setenv("GOENV", "local")
 	config, err := cfg.Load(&cfg.Params{
-		Path: "./testConf/conf",
+		Path: "./conf/conf",
 	})
 	if err != nil {
 		t.Fatalf("Unexpected error: %+v", err)
