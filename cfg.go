@@ -1,35 +1,88 @@
 package cfg
 
 import (
-	"fmt"
+	"log"
+	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
 
 const (
-	configType        = "yaml"
-	defaultConfigName = "default"
+	envModeVar        = "GOENV"
+	defaultFileType   = "yaml"
+	defaultConfigEnv  = "default"
+	defaultConfigPath = "./config"
+	localConfigEnv    = "local"
 )
 
-// LoadConfig loads a config directory, the default config file and overrides with a given configuration.
+type Cfg struct {
+	SvcName  string
+	Path     string
+	FileType string
+}
+
+type cfg interface {
+	getEnv() string
+	loadEnv(string) error
+	mergeEnv(string) error
+	setCoreUp()
+	setDefaults()
+}
+
+// Load loads a config directory, the default config file and overrides with a given configuration.
 // It returns a generic configuration, which ideally will be parsed into a struct.
-func LoadConfig(configPath, configName string) (map[string]interface{}, error) {
-	viper.SetConfigType(configType)
-	viper.AddConfigPath(configPath)
+func Load(c cfg) {
+	c.setDefaults()
+	c.setCoreUp()
 
-	// Load default config
-	viper.SetConfigName(defaultConfigName)
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("error loading \"%s\" configuration", defaultConfigName)
+	if err := c.loadEnv(defaultConfigEnv); err != nil {
+		log.Fatalln("error reading default configuration file:", err)
 	}
 
-	// Override with specific config
-	if configName != "" {
-		viper.SetConfigName(configName)
-		if err := viper.MergeInConfig(); err != nil {
-			return nil, fmt.Errorf("error overriding \"%s\" configuration", configName)
-		}
+	env := c.getEnv()
+	if err := c.mergeEnv(env); err != nil {
+		log.Fatalln("error reading %s configuration file: %s", env, err)
+	}
+}
+
+func (c *Cfg) loadEnv(env string) error {
+	viper.SetConfigName(env)
+	viper.AddConfigPath(c.Path)
+	return viper.ReadInConfig()
+}
+
+func (c *Cfg) mergeEnv(env string) error {
+	viper.SetConfigName(env)
+	viper.AddConfigPath(c.Path)
+	return viper.MergeInConfig()
+}
+
+func (c *Cfg) setDefaults() {
+	if c.Path == "" {
+		c.Path = defaultConfigPath
 	}
 
-	return viper.AllSettings(), nil
+	if c.FileType == "" {
+		c.FileType = defaultFileType
+	}
+}
+
+func (c *Cfg) setCoreUp() {
+	viper.SetConfigType(c.FileType)
+	viper.SetEnvPrefix(c.SvcName)
+	viper.AutomaticEnv()
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+}
+
+func (c *Cfg) getEnv() string {
+	env, ok := os.LookupEnv(envModeVar)
+	if !ok || env == "" {
+		env = localConfigEnv
+	}
+	return env
+}
+
+func Get(key string) map[string]interface{} {
+	return viper.GetStringMap(key)
 }
