@@ -1,0 +1,4 @@
+services:
+  main:
+    token: "my-staging-token"
+    app_id: "staging"

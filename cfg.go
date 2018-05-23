@@ -1,65 +1,92 @@
 package cfg
 
 import (
-	"flag"
-	"log"
+	"errors"
+	"fmt"
 	"os"
-	"strings"
 
-	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
 const (
-	envModeVar      = "GOENV"
-	localConfigName = "local"
+	envNameKey = "GOENV"
+
+	defaultConfigPath = "./config"
+	defaultFileType   = "yaml"
+
+	defaultConfigEnv = "default"
+	localConfigEnv   = "local"
 )
 
-var (
-	configPath string
-	configType string
-)
-
-func loadEnvConfig(env string) error {
-	viper.SetConfigName(env)
-	viper.AddConfigPath(configPath)
-	return viper.MergeInConfig()
+// Params is used to load a new environment
+type Params struct {
+	Path     string
+	FileType string
 }
 
-// Load loads the configuration file depending on the Go environment mode
-func Load(serviceName string) {
-	flag.StringVar(&configPath, "config", "./config", "Configuration dir path")
-	flag.StringVar(&configType, "configtype", "yaml", "Configuration format to use in files")
-	flag.Parse()
+// SetDefaults sets the default values of a Config fields
+func (c *Params) SetDefaults() {
+	if c.Path == "" {
+		c.Path = defaultConfigPath
+	}
+	if c.FileType == "" {
+		c.FileType = defaultFileType
+	}
+}
 
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file", err)
+type configWrapper struct {
+	v      *viper.Viper
+	params *Params
+}
+
+func (c *configWrapper) getEnv() string {
+	envName := os.Getenv(envNameKey)
+	if envName == "" {
+		envName = localConfigEnv
+	}
+	return envName
+}
+
+func (c *configWrapper) loadEnv(envName string) error {
+	c.v.SetConfigType(c.params.FileType)
+	c.v.SetConfigName(envName)
+	c.v.AddConfigPath(c.params.Path)
+	return c.v.ReadInConfig()
+}
+
+func (c *configWrapper) mergeEnv(envName string) error {
+	c.v.SetConfigType(c.params.FileType)
+	c.v.SetConfigName(envName)
+	c.v.AddConfigPath(c.params.Path)
+	return c.v.MergeInConfig()
+}
+
+// Get returns a map[string]interface{} of a given key
+func (c *configWrapper) Get(key string) map[string]interface{} {
+	return c.v.GetStringMap(key)
+}
+
+// Load loads a config directory, the default config file and overrides with a given configuration.
+// It returns a generic configuration, which ideally will be parsed into a struct.
+func Load(params *Params) (*configWrapper, error) {
+	if params == nil {
+		return nil, errors.New("nil params")
 	}
 
-	viper.SetConfigType(configType)
+	c := &configWrapper{
+		v:      viper.New(),
+		params: &(*params),
+	}
+	c.params.SetDefaults()
 
-	viper.SetEnvPrefix(serviceName)
-	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	viper.SetConfigName("default")
-	viper.AddConfigPath(configPath)
-	if err := viper.ReadInConfig(); err != nil {
-		log.Println("error reading default configuration file:", err)
+	if err := c.loadEnv(defaultConfigEnv); err != nil {
+		return nil, fmt.Errorf("error reading \"default\" configuration file")
 	}
 
-	envConfig, ok := os.LookupEnv(envModeVar)
-	if !ok || envConfig == "" {
-		envConfig = localConfigName
+	envName := c.getEnv()
+	if err := c.mergeEnv(envName); err != nil {
+		return nil, fmt.Errorf("error merging \"%s\" configuration file", envName)
 	}
 
-	if err := loadEnvConfig(envConfig); err != nil {
-		if envConfig == localConfigName {
-			log.Println(localConfigName, "file not found. Using only default config")
-			return
-		}
-
-		log.Fatalln("error reading %s configuration file: %s", envConfig, err)
-	}
+	return c, nil
 }

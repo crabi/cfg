@@ -1,0 +1,4 @@
+services:
+  main:
+    token: "my-production-token"
+    app_id: "prod"

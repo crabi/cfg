@@ -1,0 +1,10 @@
+api:
+  host: "127.0.0.1"
+  port: 8080
+
+services:
+  foo:
+    string: foo
+    int: 42
+    float: 9.81
+    bool: false

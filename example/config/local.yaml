@@ -1,0 +1,4 @@
+services:
+  main:
+    token: "my-local-token"
+    app_id: "local"
