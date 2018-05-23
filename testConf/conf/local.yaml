@@ -1,0 +1,3 @@
+services:
+  bar:
+    url: http://localhost:1337
