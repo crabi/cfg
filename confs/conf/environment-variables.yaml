@@ -1,0 +1,10 @@
+api:
+  host: "HOST"
+  port: "PORT"
+
+services:
+  foo:
+    string: "STRING"
+    int: "INT"
+    float: "FLOAT"
+    bool: "BOOL"
