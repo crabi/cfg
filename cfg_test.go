@@ -2,6 +2,7 @@ package cfg_test
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -129,7 +130,7 @@ func TestGet(t *testing.T) {
 
 	tests := map[string]struct {
 		key               string
-		expectedConfigMap map[string]interface{}
+		expectedConfigMap interface{}
 	}{
 		"TestGetFirstLevel": {
 			key: "api",
@@ -149,9 +150,63 @@ func TestGet(t *testing.T) {
 		},
 		"TestNonExistentConfig": {
 			key:               "services.cux",
-			expectedConfigMap: map[string]interface{}{},
+			expectedConfigMap: nil,
 		},
 	}
+	for testName, testCase := range tests {
+		t.Run(testName, func(t *testing.T) {
+			configMap := config.Get(testCase.key)
+			if !reflect.DeepEqual(configMap, testCase.expectedConfigMap) {
+				t.Errorf("Expected %+v, got %+v", testCase.expectedConfigMap, configMap)
+			}
+		})
+	}
+}
+
+func TestEnvVariablesReplacement(t *testing.T) {
+	os.Setenv("HOST", "0.0.0.0")
+	os.Setenv("FLOAT", "10.5")
+	config, err := cfg.Load(&cfg.Params{
+		Path: "./confs/conf",
+	})
+	if err != nil {
+		t.Fatalf("Unexpected error: %+v", err)
+	}
+
+	tests := map[string]struct {
+		key               string
+		expectedConfigMap interface{}
+	}{
+		"TestReplaceString": {
+			key: "api",
+			expectedConfigMap: map[string]interface{}{
+				"host": "0.0.0.0",
+				"port": 8080,
+			},
+		},
+		"TestFloatEnv": {
+			key: "services.foo",
+			expectedConfigMap: map[string]interface{}{
+				"string": "foo",
+				"int":    42,
+				"float":  10.5,
+				"bool":   false,
+			},
+		},
+		"TestSingleMissingDeepKey": {
+			key:               "services.foo.string.foo",
+			expectedConfigMap: nil,
+		},
+		"TestSingleSingleKey": {
+			key:               "services.foo.string",
+			expectedConfigMap: "foo",
+		},
+		"TestNonExistentConfig": {
+			key:               "services.cux",
+			expectedConfigMap: nil,
+		},
+	}
+	fmt.Println(config.AllSettings())
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
 			configMap := config.Get(testCase.key)

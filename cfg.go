@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -16,6 +18,7 @@ const (
 
 	defaultConfigEnv = "default"
 	localConfigEnv   = "local"
+	envVarConfigFile = "environment-variables"
 )
 
 // Params is used to load a new environment
@@ -61,9 +64,77 @@ func (c *configWrapper) mergeEnv(envName string) error {
 	return c.v.MergeInConfig()
 }
 
+func (c *configWrapper) loadEnvConfigFile() {
+	tempV := viper.New()
+
+	tempV.SetConfigType(c.params.FileType)
+	tempV.SetConfigName(envVarConfigFile)
+	tempV.AddConfigPath(c.params.Path)
+	if err := tempV.ReadInConfig(); err != nil {
+		return
+	}
+	keys := tempV.AllKeys()
+	for _, key := range keys {
+		envVarName := tempV.GetString(key)
+		if value, exist := os.LookupEnv(envVarName); exist {
+			if isBool(value) {
+				bValue, _ := strconv.ParseBool(value)
+				c.v.Set(key, bValue)
+			} else if isInt(value) {
+				iValue, _ := strconv.Atoi(value)
+				c.v.Set(key, iValue)
+			} else if isFloat(value) {
+				fValue, _ := strconv.ParseFloat(value, 64)
+				c.v.Set(key, fValue)
+			} else {
+				c.v.Set(key, value)
+			}
+		}
+	}
+
+	return
+}
+
 // Get returns a map[string]interface{} of a given key
-func (c *configWrapper) Get(key string) map[string]interface{} {
-	return c.v.GetStringMap(key)
+func (c *configWrapper) Get(key string) interface{} {
+	d := c.v.AllSettings()
+	v := interface{}(d)
+	path := strings.Split(key, ".")
+	for _, key := range path {
+		switch v.(type) {
+		case map[string]interface{}:
+			v = v.(map[string]interface{})[key]
+		default:
+			return nil
+		}
+
+	}
+	return v
+}
+
+func isInt(data string) bool {
+	if _, err := strconv.Atoi(data); err == nil {
+		return true
+	}
+	return false
+}
+
+func isFloat(data string) bool {
+	if _, err := strconv.ParseFloat(data, 64); err == nil {
+		return true
+	}
+	return false
+}
+
+func isBool(data string) bool {
+	if _, err := strconv.ParseBool(data); err == nil {
+		return true
+	}
+	return false
+}
+
+func (c *configWrapper) AllSettings() map[string]interface{} {
+	return c.v.AllSettings()
 }
 
 // Load loads a config directory, the default config file and overrides with a given configuration.
@@ -87,6 +158,7 @@ func Load(params *Params) (*configWrapper, error) {
 	if err := c.mergeEnv(envName); err != nil {
 		return nil, fmt.Errorf("error merging \"%s\" configuration file", envName)
 	}
+	c.loadEnvConfigFile()
 
 	return c, nil
 }
