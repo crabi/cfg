@@ -193,6 +193,14 @@ func TestEnvVariablesReplacement(t *testing.T) {
 				"bool":   false,
 			},
 		},
+		"TestSingleMissingDeepKey": {
+			key:               "services.foo.string.foo",
+			expectedConfigMap: nil,
+		},
+		"TestSingleSingleKey": {
+			key:               "services.foo.string",
+			expectedConfigMap: "foo",
+		},
 		"TestNonExistentConfig": {
 			key:               "services.cux",
 			expectedConfigMap: nil,

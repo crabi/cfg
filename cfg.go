@@ -76,7 +76,7 @@ func (c *configWrapper) loadEnvConfigFile() {
 	keys := tempV.AllKeys()
 	for _, key := range keys {
 		envVarName := tempV.GetString(key)
-		if value := os.Getenv(envVarName); value != "" {
+		if value, exist := os.LookupEnv(envVarName); exist {
 			if isBool(value) {
 				bValue, _ := strconv.ParseBool(value)
 				c.v.Set(key, bValue)
@@ -91,6 +91,7 @@ func (c *configWrapper) loadEnvConfigFile() {
 			}
 		}
 	}
+
 	return
 }
 
@@ -99,19 +100,15 @@ func (c *configWrapper) Get(key string) interface{} {
 	d := c.v.AllSettings()
 	v := interface{}(d)
 	path := strings.Split(key, ".")
-	// fmt.Println(path)
 	for _, key := range path {
-		switch t := v.(type) {
+		switch v.(type) {
 		case map[string]interface{}:
-			// fmt.Println("found key", v)
-			temp := v.(map[string]interface{})
-			v = temp[key]
+			v = v.(map[string]interface{})[key]
 		default:
-			return t
+			return nil
 		}
 
 	}
-	// fmt.Println("output", v)
 	return v
 }
 
@@ -130,7 +127,10 @@ func isFloat(data string) bool {
 }
 
 func isBool(data string) bool {
-	return (data == "true" || data == "false")
+	if _, err := strconv.ParseBool(data); err == nil {
+		return true
+	}
+	return false
 }
 
 func (c *configWrapper) AllSettings() map[string]interface{} {
