@@ -37,6 +37,12 @@ func (c *Params) SetDefaults() {
 	}
 }
 
+// Config gives access to the loaded configuration
+type Config interface {
+	Get(string) interface{}
+	AllSettings() map[string]interface{}
+}
+
 type configWrapper struct {
 	v      *viper.Viper
 	params *Params
@@ -139,7 +145,7 @@ func (c *configWrapper) AllSettings() map[string]interface{} {
 
 // Load loads a config directory, the default config file and overrides with a given configuration.
 // It returns a generic configuration, which ideally will be parsed into a struct.
-func Load(params *Params) (*configWrapper, error) {
+func Load(params *Params) (Config, error) {
 	if params == nil {
 		return nil, errors.New("nil params")
 	}
