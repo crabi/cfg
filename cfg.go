@@ -161,7 +161,7 @@ func Load(params *Params) (Config, error) {
 	}
 
 	envName := c.getEnv()
-	if err := c.mergeEnv(envName); err != nil {
+	if err := c.mergeEnv(envName); err != nil && envName != localConfigEnv {
 		return nil, fmt.Errorf("error merging \"%s\" configuration file", envName)
 	}
 	c.loadEnvConfigFile()
