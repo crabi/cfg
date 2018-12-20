@@ -106,6 +106,13 @@ func TestLoad(t *testing.T) {
 			envNameValue:  "staging",
 			expectedError: errors.New("error merging \"staging\" configuration file"),
 		},
+		"TestNoEnvSetAndMissingLocal": {
+			params: &cfg.Params{
+				Path: "./confs/confMissingLocal",
+			},
+			envNameValue:  "",
+			expectedError: nil,
+		},
 	}
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
