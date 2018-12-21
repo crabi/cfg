@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -19,12 +20,15 @@ const (
 	defaultConfigEnv = "default"
 	localConfigEnv   = "local"
 	envVarConfigFile = "environment-variables"
+
+	dotEnvFile = ".env"
 )
 
 // Params is used to load a new environment
 type Params struct {
-	Path     string
-	FileType string
+	Path          string
+	FileType      string
+	RequireDotEnv bool
 }
 
 // SetDefaults sets the default values of a Config fields
@@ -143,11 +147,30 @@ func (c *configWrapper) AllSettings() map[string]interface{} {
 	return c.v.AllSettings()
 }
 
+func loadDotEnv(required bool) error {
+	_, err := os.Stat(dotEnvFile)
+	dotEnvExist := !os.IsNotExist(err)
+
+	if required && !dotEnvExist {
+		return errors.New("missing required " + dotEnvFile)
+	}
+
+	if !required && !dotEnvExist {
+		return nil
+	}
+
+	return godotenv.Load(dotEnvFile)
+}
+
 // Load loads a config directory, the default config file and overrides with a given configuration.
 // It returns a generic configuration, which ideally will be parsed into a struct.
 func Load(params *Params) (Config, error) {
 	if params == nil {
 		return nil, errors.New("nil params")
+	}
+
+	if err := loadDotEnv(params.RequireDotEnv); err != nil {
+		return nil, err
 	}
 
 	c := &configWrapper{
