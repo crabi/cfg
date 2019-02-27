@@ -8,3 +8,10 @@ services:
     int: "INT"
     float: "FLOAT"
     bool: "BOOL"
+    multi_array:
+      - "ONE"
+      - "NON_EXISTING_VAR"
+      - "TWO"
+    single_array:
+      - "ONE"
+

@@ -86,6 +86,37 @@ func (c *configWrapper) loadEnvConfigFile() {
 	keys := tempV.AllKeys()
 	for _, key := range keys {
 		envVarName := tempV.GetString(key)
+		envVarNames := tempV.GetStringSlice(key)
+
+		// If size = 1 is just the value wrapped in a  slice, not actual configuration slice
+		if envVarName == "" && len(envVarNames) > 0 {
+			values := make([]interface{}, 0)
+			for _, envVarName := range envVarNames {
+				value := os.Getenv(envVarName)
+				if value == "" {
+					continue
+				}
+
+				if isBool(value) {
+					bValue, _ := strconv.ParseBool(value)
+					values = append(values, bValue)
+				} else if isInt(value) {
+					iValue, _ := strconv.Atoi(value)
+					values = append(values, iValue)
+				} else if isFloat(value) {
+					fValue, _ := strconv.ParseFloat(value, 64)
+					values = append(values, fValue)
+				} else {
+					values = append(values, value)
+				}
+			}
+
+			if len(values) > 0 {
+				c.v.Set(key, values)
+			}
+			continue
+		}
+
 		if value, exist := os.LookupEnv(envVarName); exist {
 			if isBool(value) {
 				bValue, _ := strconv.ParseBool(value)
@@ -101,8 +132,6 @@ func (c *configWrapper) loadEnvConfigFile() {
 			}
 		}
 	}
-
-	return
 }
 
 // Get returns a map[string]interface{} of a given key
@@ -111,9 +140,9 @@ func (c *configWrapper) Get(key string) interface{} {
 	v := interface{}(d)
 	path := strings.Split(key, ".")
 	for _, key := range path {
-		switch v.(type) {
+		switch t := v.(type) {
 		case map[string]interface{}:
-			v = v.(map[string]interface{})[key]
+			v = t[key]
 		default:
 			return nil
 		}

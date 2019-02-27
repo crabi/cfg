@@ -2,7 +2,6 @@ package cfg_test
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -173,6 +172,9 @@ func TestGet(t *testing.T) {
 func TestEnvVariablesReplacement(t *testing.T) {
 	os.Setenv("HOST", "0.0.0.0")
 	os.Setenv("FLOAT", "10.5")
+	os.Setenv("ONE", "one")
+	os.Setenv("TWO", "2")
+
 	config, err := cfg.Load(&cfg.Params{
 		Path: "./confs/conf",
 	})
@@ -194,10 +196,12 @@ func TestEnvVariablesReplacement(t *testing.T) {
 		"TestFloatEnv": {
 			key: "services.foo",
 			expectedConfigMap: map[string]interface{}{
-				"string": "foo",
-				"int":    42,
-				"float":  10.5,
-				"bool":   false,
+				"string":       "foo",
+				"int":          42,
+				"float":        10.5,
+				"bool":         false,
+				"multi_array":  []interface{}{"one", 2},
+				"single_array": []interface{}{"one"},
 			},
 		},
 		"TestSingleMissingDeepKey": {
@@ -213,7 +217,7 @@ func TestEnvVariablesReplacement(t *testing.T) {
 			expectedConfigMap: nil,
 		},
 	}
-	fmt.Println(config.AllSettings())
+
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
 			configMap := config.Get(testCase.key)
