@@ -25,6 +25,6 @@ func main() {
 	mainServiceConfig := config.Get("services.main")
 
 	// Only to pretty print
-	mainServiceConfigPretty, err := json.MarshalIndent(mainServiceConfig, "", "  ")
+	mainServiceConfigPretty, _ := json.MarshalIndent(mainServiceConfig, "", "  ")
 	fmt.Printf("%s", string(mainServiceConfigPretty))
 }
