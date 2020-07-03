@@ -52,7 +52,7 @@ func TestParamsSetDefault(t *testing.T) {
 	}
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
-			newParams := &(*testCase.params)
+			newParams := testCase.params
 			newParams.SetDefaults()
 			if !reflect.DeepEqual(newParams, testCase.expectedParams) {
 				t.Errorf("Expected %+v, got %+v", testCase.expectedParams, newParams)

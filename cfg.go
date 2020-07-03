@@ -204,7 +204,7 @@ func Load(params *Params) (Config, error) {
 
 	c := &configWrapper{
 		v:      viper.New(),
-		params: &(*params),
+		params: params,
 	}
 	c.params.SetDefaults()
 
