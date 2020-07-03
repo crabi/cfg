@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/crabi/cfg"
+	"github.com/crabi/cfg/v2"
 )
 
 func main() {

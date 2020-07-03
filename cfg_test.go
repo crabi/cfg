@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/crabi/cfg"
+	"github.com/crabi/cfg/v2"
 )
 
 func TestParamsSetDefault(t *testing.T) {
