@@ -209,12 +209,12 @@ func Load(params *Params) (Config, error) {
 	c.params.SetDefaults()
 
 	if err := c.loadEnv(defaultConfigEnv); err != nil {
-		return nil, fmt.Errorf("error reading \"default\" configuration file")
+		return nil, fmt.Errorf("error reading \"default\" configuration file: %v", err)
 	}
 
 	envName := c.getEnv()
 	if err := c.mergeEnv(envName); err != nil && envName != localConfigEnv {
-		return nil, fmt.Errorf("error merging \"%s\" configuration file", envName)
+		return nil, fmt.Errorf("error merging \"%s\" configuration file: %v", envName, err)
 	}
 	c.loadEnvConfigFile()
 
