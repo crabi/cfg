@@ -1,9 +1,15 @@
+# Plantuml out files
+out/docs
+
 # Binaries for programs and plugins
 *.exe
+*.exe~
 *.dll
 *.so
 *.dylib
-*.sw*
+bin/*
+.vscode/
+.idea/
 
 # Test binary, build with `go test -c`
 *.test
@@ -11,6 +17,26 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
-.glide/
-.vscode/
+vendor/
+keys/
+_tools/
+.vendor-new/
+
+# Compiled binary
+heimdall
+bin/**
+_tools/**
+# Configs
+tmp_krakend_config*
+.env
+
+config/local.yaml
+.idea/.gitignore
+.idea/heimdall.iml
+.idea/modules.xml
+.idea/vcs.xml
+__debug_bin
+google-application-credentials.json
+.idea/
+.idea/git_toolbox_blame.xml
+.idea/workspace.xml
